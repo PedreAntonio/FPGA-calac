@@ -242,3 +242,52 @@ component mux is
         output: out std_logic_vector( 3 downto 0 )
     );
 end component;
+
+component comparator is
+    port(   rst: in std_logic;
+        x, y: in std_logic_vector( 3 downto 0 );
+        output: out std_logic_vector( 1 downto 0 )
+    );
+end component;
+ 
+component subtractor is
+    port(   rst: in std_logic; 
+        cmd: in std_logic_vector( 1 downto 0 );
+        x, y: in std_logic_vector( 3 downto 0 );
+        xout, yout: out std_logic_vector( 3 downto 0 )
+    );
+end component;
+ 
+component regis is
+    port(   rst, clk, load: in std_logic;
+        input: in std_logic_vector( 3 downto 0 );
+        output: out std_logic_vector( 3 downto 0 )
+    );
+end component;
+ 
+signal xld, yld, xsel, ysel, enable: std_logic;
+signal comparison: std_logic_vector( 1 downto 0 );
+signal result: std_logic_vector( 3 downto 0 );                  
+ 
+signal xsub, ysub, xmux, ymux, xreg, yreg: std_logic_vector( 3 downto 0 );
+ 
+begin
+ 
+    -- doing structure modeling here
+ 
+    -- FSM controller
+    TOFSM: fsm port map(    rst, clk, go_i, comparison, 
+                enable, xsel, ysel, xld, yld );                  
+    -- Datapath
+    X_MUX: mux port map( rst, xsel, x_i, xsub, xmux );
+    Y_MUX: mux port map( rst, ysel, y_i, ysub, ymux );
+    X_REG: regis port map( rst, clk, xld, xmux, xreg ); 
+    Y_REG: regis port map( rst, clk, yld, ymux, yreg ); 
+    U_COMP: comparator port map( rst, xreg, yreg, comparison );
+    X_SUB: subtractor port map( rst, comparison, xreg, yreg, xsub, ysub );
+    OUT_REG: regis port map( rst, clk, enable, xsub, result );
+    
+    d_o <= result; 
+ 
+end gcd_arc;
+
